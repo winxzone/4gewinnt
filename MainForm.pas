@@ -4,7 +4,8 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls, uLang, uGameController;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Menus,
+  uGameController;
 
 type
   TForm1 = class(TForm)
@@ -12,24 +13,28 @@ type
     bNewGame: TButton;
     pbBoard: TPaintBox;
     rgGameMode: TRadioGroup;
-    rbPlayerVsPlayer: TRadioButton;
-    cbLanguage: TComboBox;
     lblCurrentPlayer: TLabel;
+    MainMenu1: TMainMenu;
+    N1: TMenuItem;
+    Settings1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure bNewGameClick(Sender: TObject);
+    procedure rgGameModeClick(Sender: TObject);
     procedure pbBoardPaint(Sender: TObject);
     procedure pbBoardMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure cbLanguageChange(Sender: TObject);
+    procedure Settings1Click(Sender: TObject);
+    procedure N1Click(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
     FGame: TGameController;
-
-    FGameOver: Boolean;
     procedure CirclePaint(x, y: Integer);
     procedure UpdateCurrentPlayer;
+    procedure CheckAndComputerMove;
 
   public
     { Public-Deklarationen }
+    procedure ApplyLanguage;
   end;
 
 var
@@ -37,49 +42,85 @@ var
 
 implementation
 
+uses
+  uSettings, uLang;
 {$R *.dfm}
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  cbLanguage.Items.Clear;
-  cbLanguage.Items.Add('Deutsch');
-  cbLanguage.Items.Add('English');
-  cbLanguage.Items.Add('Ruskij');
-  cbLanguage.Style := csDropDownList;
-
-  cbLanguage.ItemIndex := 0;
-  CurrentLang := de;
-
   Randomize;
   FGame := TGameController.Create;
+end;
+
+procedure TForm1.FormShow(Sender: TObject);
+begin
+  Settings.LoadSettings;
+  rgGameMode.ItemIndex := 0;
   FGame.NewGame;
   UpdateCurrentPlayer;
+  CheckAndComputerMove;
+  pbBoard.Invalidate;
+end;
+
+procedure TForm1.ApplyLanguage;
+begin
+  bNewGame.Caption := CaptionNewGame;
+  MainMenu1.Items[0].Caption := CaptionNewGame;
+  MainMenu1.Items[1].Caption := CaptionSettings;
+
+  rgGameMode.Items[0] := CaptionGameMode(0);
+  rgGameMode.Items[1] := CaptionGameMode(1);
+
+end;
+
+procedure TForm1.N1Click(Sender: TObject);
+begin
+  FGame.NewGame;
+  UpdateCurrentPlayer;
+  CheckAndComputerMove;
+  pbBoard.Invalidate;
+end;
+
+procedure TForm1.CheckAndComputerMove;
+begin
+  if rgGameMode.ItemIndex = 1 then
+    if FGame.GetCurrentPlayer = 2 then
+      FGame.MakeComputerMove;
 end;
 
 // Label Aktueller Spieler
 procedure TForm1.UpdateCurrentPlayer;
-var Player: Integer;
 begin
-  Player := FGame.GetCurrentPlayer;
-  lblCurrentPlayer.Caption := MsgCurrentPlayer(Player);
-  if Player = 1 then
-    lblCurrentPlayer.Font.Color := clRed
-  else
+  if (FGame.GetCurrentPlayer = 2) and (rgGameMode.ItemIndex = 1) then
+  begin
     lblCurrentPlayer.Font.Color := clYellow;
-
+    lblCurrentPlayer.Caption := MsgComputerCaption;
+  end
+  else if (FGame.GetCurrentPlayer = 1)then
+  begin
+    lblCurrentPlayer.Font.Color := clRed;
+    lblCurrentPlayer.Caption := MsgCurrentPlayer(PlayerName1);
+  end
+  else
+  begin
+    lblCurrentPlayer.Font.Color := clYellow;
+    lblCurrentPlayer.Caption := MsgCurrentPlayer(PlayerName2);
+  end;
 end;
-
 
 procedure TForm1.pbBoardMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
-var _x, Player : Integer;
+var _x: Integer;
 begin
-Player := FGame.GetCurrentPlayer;
   _x := (X div (pbBoard.Width div 7));
 
   FGame.MakeMove(_x);
-  UpdateCurrentPlayer;
   pbBoard.Invalidate;
+  UpdateCurrentPlayer;
+
+  CheckAndComputerMove;
+  pbBoard.Invalidate;
+  UpdateCurrentPlayer;
 
   if FGame.IsBoardFull then
   begin
@@ -87,10 +128,13 @@ Player := FGame.GetCurrentPlayer;
   end
   else if FGame.IsGameOver then
   begin
-    ShowMessage(MsgPlayerWon(Player));
+    if FGame.GetCurrentPlayer = 1 then
+      ShowMessage(MsgPlayerWon(PlayerName1))
+    else if (rgGameMode.ItemIndex = 1) and (FGame.GetCurrentPlayer = 2) then
+      ShowMessage(MsgComputerWon)
+    else
+      ShowMessage(MsgPlayerWon(PlayerName2));
   end;
-
-
 end;
 
 procedure TForm1.pbBoardPaint(Sender: TObject);
@@ -100,13 +144,28 @@ begin
     pbBoard.Canvas.FillRect(pbBoard.ClientRect);
 
     for x := 0 to 6 do
-    for y := 0 to 5 do
-      CirclePaint(x, y);
+      for y := 0 to 5 do
+        CirclePaint(x, y);
+end;
+
+procedure TForm1.rgGameModeClick(Sender: TObject);
+begin
+  FGame.NewGame;
+  CheckAndComputerMove;
+  UpdateCurrentPlayer;
+  pbBoard.Invalidate;
+
+end;
+
+procedure TForm1.Settings1Click(Sender: TObject);
+begin
+  Settings.ShowModal;
 end;
 
 procedure TForm1.bNewGameClick(Sender: TObject);
 begin
   FGame.NewGame;
+  CheckAndComputerMove;
   UpdateCurrentPlayer;
   pbBoard.Invalidate;
 end;
@@ -137,18 +196,6 @@ begin
   pbBoard.Canvas.Pen.Color := clBlack;
   pbBoard.Canvas.Pen.Width := 3;
   pbBoard.Canvas.Ellipse(R);
-end;
-
-procedure TForm1.cbLanguageChange(Sender: TObject);
-begin
-  case cbLanguage.ItemIndex of
-    0: CurrentLang := de;
-    1: CurrentLang := en;
-    2: CurrentLang := ru;
-  end;
-
-  bNewGame.Caption := CaptionNewGame;
-  lblCurrentPlayer.Caption := MsgCurrentPlayer(FGame.GetCurrentPlayer);
 end;
 
 end.
