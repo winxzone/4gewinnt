@@ -16,24 +16,25 @@ type
     Button1: TButton;
     cbLanguage: TComboBox;
     Label3: TLabel;
+    Button2: TButton;
     procedure FormCreate(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure cbLanguageChange(Sender: TObject);
-
   private
     { Private-Deklarationen }
     procedure SaveSettings;
     procedure ApplyLanguage;
   public
     { Public-Deklarationen }
+    PlayerName1: String;
+    PlayerName2: String;
     function GetLanguage: TLanguage;
     procedure LoadSettings;
   end;
 
 var
   Settings: TSettings;
-  PlayerName1: String;
-  PlayerName2: String;
+
 
 implementation
 

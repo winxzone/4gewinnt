@@ -3,9 +3,10 @@ object Form1: TForm1
   Top = 0
   BorderStyle = bsSingle
   Caption = '4 Gewinnt'
-  ClientHeight = 513
-  ClientWidth = 801
+  ClientHeight = 567
+  ClientWidth = 868
   Color = clBtnFace
+  DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -12
@@ -18,8 +19,8 @@ object Form1: TForm1
   object pbBoard: TPaintBox
     Left = 151
     Top = 0
-    Width = 653
-    Height = 518
+    Width = 714
+    Height = 573
     Align = alCustom
     Color = clWhite
     ParentColor = False
@@ -30,7 +31,7 @@ object Form1: TForm1
     Left = -8
     Top = -5
     Width = 161
-    Height = 526
+    Height = 578
     Color = clCornflowerblue
     ParentBackground = False
     TabOrder = 0
@@ -93,6 +94,18 @@ object Form1: TForm1
       ParentFont = False
       TabOrder = 1
       OnClick = bNewGameClick
+    end
+    object rgSizeBoard: TRadioGroup
+      Left = 16
+      Top = 248
+      Width = 137
+      Height = 97
+      Items.Strings = (
+        '7x6'
+        '8x7'
+        '9x8')
+      TabOrder = 2
+      OnClick = rgSizeBoardClick
     end
   end
   object MainMenu1: TMainMenu

@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Menus,
-  uGameController;
+  uGameController, Vcl.ComCtrls;
 
 type
   TForm1 = class(TForm)
@@ -17,6 +17,7 @@ type
     MainMenu1: TMainMenu;
     N1: TMenuItem;
     Settings1: TMenuItem;
+    rgSizeBoard: TRadioGroup;
     procedure FormCreate(Sender: TObject);
     procedure bNewGameClick(Sender: TObject);
     procedure rgGameModeClick(Sender: TObject);
@@ -26,11 +27,15 @@ type
     procedure Settings1Click(Sender: TObject);
     procedure N1Click(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure rgSizeBoardClick(Sender: TObject);
   private
     FGame: TGameController;
+    Cols, Row : Integer;
     procedure CirclePaint(x, y: Integer);
     procedure UpdateCurrentPlayer;
     procedure CheckAndComputerMove;
+
+    procedure SelectBoardSize;
 
   public
     { Public-Deklarationen }
@@ -55,11 +60,31 @@ end;
 procedure TForm1.FormShow(Sender: TObject);
 begin
   Settings.LoadSettings;
+
   rgGameMode.ItemIndex := 0;
+  rgSizeBoard.ItemIndex := 0;
+
+  SelectBoardSize;
+
   FGame.NewGame;
+
   UpdateCurrentPlayer;
   CheckAndComputerMove;
   pbBoard.Invalidate;
+end;
+
+procedure TForm1.SelectBoardSize;
+begin
+  case rgSizeBoard.ItemIndex of
+    0: begin Cols := 7; Row := 6; end;
+    1: begin Cols := 8; Row := 7; end;
+    2: begin Cols := 9; Row := 8; end;
+  end;
+
+  FGame.SetBoardSize(Cols, Row);
+//  OutputDebugString(Pchar(IntToStr(Cols) + ' ' +  IntTostr(Row)));
+
+
 end;
 
 procedure TForm1.ApplyLanguage;
@@ -70,6 +95,8 @@ begin
 
   rgGameMode.Items[0] := CaptionGameMode(0);
   rgGameMode.Items[1] := CaptionGameMode(1);
+
+//  rgSizeBoard - add later
 
 end;
 
@@ -83,12 +110,10 @@ end;
 
 procedure TForm1.CheckAndComputerMove;
 begin
-  if rgGameMode.ItemIndex = 1 then
-    if FGame.GetCurrentPlayer = 2 then
+  if (rgGameMode.ItemIndex = 1) and (FGame.GetCurrentPlayer = 2) then
       FGame.MakeComputerMove;
 end;
 
-// Label Aktueller Spieler
 procedure TForm1.UpdateCurrentPlayer;
 begin
   if (FGame.GetCurrentPlayer = 2) and (rgGameMode.ItemIndex = 1) then
@@ -99,12 +124,12 @@ begin
   else if (FGame.GetCurrentPlayer = 1)then
   begin
     lblCurrentPlayer.Font.Color := clRed;
-    lblCurrentPlayer.Caption := MsgCurrentPlayer(PlayerName1);
+    lblCurrentPlayer.Caption := MsgCurrentPlayer(Settings.PlayerName1);
   end
   else
   begin
     lblCurrentPlayer.Font.Color := clYellow;
-    lblCurrentPlayer.Caption := MsgCurrentPlayer(PlayerName2);
+    lblCurrentPlayer.Caption := MsgCurrentPlayer(Settings.PlayerName2);
   end;
 end;
 
@@ -112,7 +137,7 @@ procedure TForm1.pbBoardMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var _x: Integer;
 begin
-  _x := (X div (pbBoard.Width div 7));
+  _x := (X div (pbBoard.Width div Cols));
 
   FGame.MakeMove(_x);
   pbBoard.Invalidate;
@@ -129,11 +154,11 @@ begin
   else if FGame.IsGameOver then
   begin
     if FGame.GetCurrentPlayer = 1 then
-      ShowMessage(MsgPlayerWon(PlayerName1))
+      ShowMessage(MsgPlayerWon(Settings.PlayerName1))
     else if (rgGameMode.ItemIndex = 1) and (FGame.GetCurrentPlayer = 2) then
       ShowMessage(MsgComputerWon)
     else
-      ShowMessage(MsgPlayerWon(PlayerName2));
+      ShowMessage(MsgPlayerWon(Settings.PlayerName2));
   end;
 end;
 
@@ -143,13 +168,23 @@ begin
     pbBoard.Canvas.Brush.Color := clHighlight;
     pbBoard.Canvas.FillRect(pbBoard.ClientRect);
 
-    for x := 0 to 6 do
-      for y := 0 to 5 do
+    for x := 0 to Cols-1 do
+      for y := 0 to Row-1 do
         CirclePaint(x, y);
 end;
 
 procedure TForm1.rgGameModeClick(Sender: TObject);
 begin
+  FGame.NewGame;
+  CheckAndComputerMove;
+  UpdateCurrentPlayer;
+  pbBoard.Invalidate;
+
+end;
+
+procedure TForm1.rgSizeBoardClick(Sender: TObject);
+begin
+  SelectBoardSize;
   FGame.NewGame;
   CheckAndComputerMove;
   UpdateCurrentPlayer;
@@ -177,8 +212,8 @@ var
   R: TRect;
 begin
 
-  CellWidth := pbBoard.Width div 7;
-  CellHeight := pbBoard.Height div 6;
+  CellWidth := pbBoard.Width div Cols;
+  CellHeight := pbBoard.Height div Row;
 
   cx := x * CellWidth + CellWidth div 2;
   cy := y * CellHeight + CellHeight div 2;

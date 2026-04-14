@@ -79,4 +79,12 @@ object Settings: TSettings
       OnChange = cbLanguageChange
     end
   end
+  object Button2: TButton
+    Left = 142
+    Top = 201
+    Width = 75
+    Height = 25
+    Caption = 'Button2'
+    TabOrder = 1
+  end
 end

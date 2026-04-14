@@ -2,7 +2,10 @@ program Project1;
 
 uses
   Vcl.Forms,
-  Unit1 in 'Unit1.pas' {Form1};
+  MainForm in 'MainForm.pas' {Form1},
+  uLang in 'uLang.pas',
+  uGameController in 'uGameController.pas',
+  uSettings in 'uSettings.pas' {Settings};
 
 {$R *.res}
 
@@ -10,5 +13,6 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TSettings, Settings);
   Application.Run;
 end.
